@@ -1,0 +1,2 @@
+padreFigliConSalvataggioPID: padreFigliConSalvataggioPID.c
+	gcc -Wall padreFigliConSalvataggioPID.c -o padreFigliConSalvataggioPID
