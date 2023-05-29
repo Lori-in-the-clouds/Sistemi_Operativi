@@ -11,6 +11,12 @@ typedef struct {
     char C;
     long int PC;
 } structer;
+int modified;
+
+void handler(int signo) {
+    printf("Stampa di DEBUGGING");
+    exit(modified);
+}
 int main(int argc,char **argv) {
     /*--------------*variabili locali*--------------*/
     int N;	/*numero di processi figli*/
@@ -21,20 +27,19 @@ int main(int argc,char **argv) {
     int pid;
     int C1,C2;
     int pidFiglio,status,ritorno;	/*per fork e wait*/
-    pipe_t *piped_FN;
-    pipe_t *piped_NP;
-    int occ; /*conta le occorenze del carattere in un file*/
+    pipe_t *piped; /*pipe tra nipoti e padre*/
+    pipe_t p; /*pipe tra figlio e nipote*/
     structer A;
     A.PC = 255;
     /*----------------------------------------------*/
 
     /*controllo sul numero di parametri*/
-    if (argc < 3) {
+    if (argc < 4) {
         printf("Errore numero di parametri, dato che argc=%d\n",argc);
         exit(1);
     }
 
-    N = argc -3;
+    N = argc - 3;
 
     /*Controllo che gli ultimi due parametri siano un singolo carattere*/
     if (strlen(argv[argc-1]) != 1 || strlen(argv[argc-2]) != 1) {
@@ -44,19 +49,19 @@ int main(int argc,char **argv) {
 
     C1 = argv[argc-2][0];
     C2 = argv[argc-1][0];
-    printf("DEBUG- C1 = %c e C2 = %c\n",C1,C2);
+    
+    printf("DEBUG-Caratteri da cercare %c e %c\n",C1,C2);
 
     /*allocazione dell'array di N pipe descriptors*/
-    piped_FN= (pipe_t*)malloc(N*sizeof(pipe_t));
-    piped_NP= (pipe_t*)malloc(N*sizeof(pipe_t));
-    if (piped_FN == NULL || piped_NP == NULL) {
-        printf("Errore: problemi nell'allocazione di memoria per le pipe\n");
+    piped= (pipe_t*)malloc(N*sizeof(pipe_t));
+    if (piped == NULL) {
+        printf("Errore: problemi nell'allocazione di memoria per la pipe\n");
         exit(3);
     }
 
     for(j=0;j<N;j++) {
-        if(pipe(piped_FN[j]) < 0 || piped_NP[j] < 0) {
-            printf("Errore: problemi nella creazione delle pipe\n");
+        if(pipe(piped[j]) < 0) {
+            printf("Errore: problemi nella creazione della pipe\n");
             exit(4);
         }
     }
@@ -68,153 +73,137 @@ int main(int argc,char **argv) {
             printf("Errore nella fork\n");
             exit(5);
         }
+        
         if(pid == 0) {
             /*codice figlio*/
-            
+           
 
-            if ((pid = fork()) < 0) {
-                  printf("Errore nella fork\n");
-                  exit(5);
+            /*creiamo la pipe di comunicazione con il nipote*/
+            if (pipe(p) < 0) {
+                printf("Errore nella pipe\n");
+                exit(-1);
+            }
+
+            signal(SIGUSR1,handler); //ATTENZIONE
+            if((pid = fork()) < 0) {
+                printf("Errore nella fork\n");
+                exit(5);
             }
 
             if (pid == 0) {
-                
                 /*codice nipote*/
-                /*chiudiamo la pipe rimasta aperta del figlio-padre ma che il nipote non usa*/
+
                 for(k=0;k<N;k++) {
-                    close(piped_FN[k][1]);
-                    if (i != k) {
-                        close(piped_FN[k][0]);
-                    } 
+                    close(piped[k][0]);
+                    if (i != k) close(piped[k][1]);
                 }
+                /*chiudiamo le pipe che non utilizziamo*/
+                close(p[1]);
 
-                /*chiudiamo pipe che non utilizziamo*/
-                for (k=0;k<N;k++) {
-                    close(piped_NP[k][0]);
-                    if(i != k) close(piped_NP[k][1]);
-                }
-
+                /*apriamo il file*/
                 if ((fd = open(argv[i+1],O_RDONLY))<0) {
-                     printf("Errore: impossibile aprire in  il file %s\n",argv[i+1]);
+                    printf("Errore: impossibile aprire in  il file %s\n",argv[i+1]);
                     exit(-1);
                 }
 
-                occ = 0;
-                /*leggiamo il file*/
-                k=0L;
+                modified = 0;
+                k=0L; /*indice*/
                 while(read(fd,&ch,sizeof(ch))) {
                     if (ch == C2) {
-                        occ++;
+
                         /*leggiamo ciò che ci ha inviato il figlio*/
-                        read(piped_FN[i][0],&A,sizeof(structer));
-                        printf("debug-Cio che è stato invato dal figlio %ld\n",A.PC);
-                        printf("debug-Valore di k = %ld\n",k);
+                        read(p[0],&A,sizeof(A));
                         if (k < A.PC) {
-                            printf("siamo entrati\n");
+                            printf("DEBUG_siamo dentro\n");
                             A.C = C2;
                             A.PC = k;
-                            printf("DEBUG_Struct A: A->C = %c e A->PC = %ld\n",A.C,A.PC);
-
-
-                            /*scriviamo sulla pipe verso il padre*/
-                            write(piped_NP[i][1],&A,sizeof(structer));
-                        } else {
-                            write(piped_NP[i][1],&A,sizeof(structer));
+                            modified++;
                         }
+
+                        /*scriviamo comunque al padre*/
+                        write(piped[i][1],&A,sizeof(A));
                     }
                     k++;
                 }
-                exit(occ);
+                exit(modified);
             }
 
             /*codice figlio*/
-            
-            /*chiudiamo pipe che non utilizziamo*/
-            for (k=0;k<N;k++) {
-                close(piped_FN[k][0]);
 
-                if(i != k) {
-                    close(piped_FN[k][1]);
-                }
+            /*chiudiamo le pipe che non utilzziamo*/
+            for (k=0;k<N;j++) {
+                close(piped[k][0]);
+                close(piped[k][1]);
             }
-            /*chiudiamo le altre pipe*/
-            for (k=0;k<N;k++) {
-                close(piped_NP[k][0]);
-                close(piped_NP[k][1]);
-            }
-            
+            close(p[0]);
+
+            /*apriamo il file*/
             if ((fd = open(argv[i+1],O_RDONLY))<0) {
-                    printf("Errore: impossibile aprire in  il file %s\n",argv[i+1]);
-                    exit(-1);
+                printf("Errore: impossibile aprire in  il file %s\n",argv[i+1]);
+                exit(-1);
             }
 
-            occ = 0;
-            /*leggiamo il file*/
-            k=0L;
+            modified = 0;
+            k=0L; //indice
+
             while(read(fd,&ch,sizeof(ch))) {
                 if (ch == C1) {
-                    printf("DEBUG_ occorrenza del carattere %c trovata all'indice %ld\n",C1,k);
-                    A.C = C1;
+                    printf("DEBUG_il figlio di indice %d ha trovato l'occorenza alla posizione %ld,ora lo invia al figlio\n",i,k);
                     A.PC = k;
-                    printf("DEBUG_Struct A: A->C = %c e A->PC = %ld\n",A.C,A.PC);
-                    occ++;
-                    write(piped_FN[i][1],&A,sizeof(structer));
+                    A.C = C1;
+                    modified++;
+                    /*scriviamo al nipote*/
+                    write(p[1],&A,sizeof(A));
                 }
                 k++;
             }
             
-            /*Il figlio aspetta tutti i processi nipoti*/
-            
-                if((pid= wait(&status)) < 0) {
+            sleep(1);
+            kill(pid,SIGUSR1); //ATTENZIONE 
+            /*Il figlio aspetta il nipote*/
+            if((pidFiglio = wait(&status)) < 0) {
                     printf("Errore wait\n");
                     exit(6);
                 }
                 if((status & 0xFF) != 0) {
-                    printf("Nipote con pid %d terminato in modo anomalo\n",pid);
+                    printf("Figlio con pid %d terminato in modo anomalo\n",pidFiglio);
                      exit(7);
                 } else {
                      ritorno = (int)((status >> 8) & 0xFF);
-                     printf("Il nipote con pid = %d ha ritornato il numero di occorrenze %d (se 255 problemi!)\n",pid,ritorno);
+                     printf("Il nipote con pid = %d ha ritornato %d (se 255 problemi!)\n",pidFiglio,ritorno);
                  }
             
-            exit(occ);
-    
+            exit(modified);
         }
     }
 
     /*codice padre*/
 
-    /*il padre chiude i processi che non utilizza*/
-    /*chiudiamo pipe che non utilizziamo*/
-    for (k=0;k<N;k++) {
-        close(piped_FN[k][0]);
-        close(piped_FN[k][1]);
-        close(piped_NP[k][1]);
+    /*il padre chiude le pipe che non utilizza*/
+    /*chiudiamo le pipe che non utilizziamo*/
+    for (j=0;j<N;j++) {
+        close(piped[j][1]);
     }
 
-    /*il padre legge dalla pipe*/
-    for(i=0;i<N;i++) {
-       read(piped_NP[i][0],&A,sizeof(structer));
-       printf("DEBUG_Struct in padre A: A->C = %c e A->PC = %ld\n",A.C,A.PC);
-
-       printf("Nipote di indice %d ha inviato C=%c e PC=%ld\n",i,A.C,A.PC);
+    /*il padre stampa le informazioni ricevute dal nipote*/
+    for(j=0;j<N;j++) {
+        read(piped[j][0],&A,sizeof(A));
+        printf("Il nipote di indice %d ha ritornato C = %c e PC= %ld\n",j,A.C,A.PC);
     }
 
     /*Il padre aspetta tutti i processi figli*/
     for(j=0;j<N;j++) {
         if((pidFiglio = wait(&status)) < 0) {
             printf("Errore wait\n");
-            exit(-1);
+            exit(8);
         }
         if((status & 0xFF) != 0) {
             printf("Figlio con pid %d terminato in modo anomalo\n",pidFiglio);
              exit(9);
         } else {
              ritorno = (int)((status >> 8) & 0xFF);
-             printf("Il figlio con pid = %d ha ritornato il numero di occorenze %d (se 255 problemi!)\n",pidFiglio,ritorno);
+             printf("Il figlio con pid = %d ha ritornato %d (se 255 problemi!)\n",pidFiglio,ritorno);
          }
     }
     exit(0);
-
-
 }
