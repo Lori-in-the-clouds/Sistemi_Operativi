@@ -1,0 +1,223 @@
+#!/bin/sh
+
+#1)CONTROLLO SUL NUMERO DI PARAMETRI
+#2)CONTROLLO CHE UN PARAMETRO SIA UN NUMERO STRETTAMETE POSITIVO
+#3)CONTROLLIAMO CHE UN PARAMETRO SIA UN NOME ASSOLUTO, CHE SIA UNA DIRECTORY E CHE SIA ATTRAVERSABILE
+#4)CONTROLLO SE UN PARAMETRO È COSTITUITO DA SOLO UN CARATTERE
+#5)FINITO I CONTROLLI, SETTAGGIO VARIABILE PATH
+#6)SPOSTAMENTO NELLA DIRECTORY CORRENTE
+#7)PARTE RICORSIVA
+#8)NUMERO DI RIGHE CHE INIZIANO CON UNA LETTERA, ESEMPIO 'a'
+#9)FILE CHE ABBIA TERMINAZIONE .S
+#10)CONTROLLO IL NUMERO DI LINEE DEL FILE
+#11)CONTROLLO CHE IL NOME DEL FILE ABBIA TOT CARATTERI
+#12)VERIFICHIAMO SE CHE IL FILE CONTENGA IL CARATTERE/STRINGA PASSATO COME PARAMETRO
+#13)SE VUOI USARE SORT
+#14)CONTROLLO SULLE STRINGHE
+#15)INSERIMENTO CONTENUTO ALL'INTERNO DI UNA LISTA
+#16)COPIARE UN FILE DENTRO UN'ALTRO FILE MA IN APPEND
+#17)CONTROLLO CHE DUE FILE ABBIANO LO STESSO CONTENUTO
+#18)SELEZIONARE LA X-ESIMA RIGA
+#19)CONTROLLARE CHE IN UN FILE CI SIANO SOLTANTO LETTERE MINUSCOLE
+
+#1)CONTROLLO SUL NUMERO DI PARAMETRI
+
+#controllo il numero di parametri, controllo (stretto/lasco)
+case $# in
+	3);; #vuoto
+
+	*) #errore, numero di parametri non corretto
+		echo Errore: numero di parametri non corretto
+		exit 1;;
+esac
+ #------------------------------------------
+ #2)CONTROLLO CHE UN PARAMETRO SIA UN NUMERO STRETTAMETE POSITIVO
+ 
+ #controllo che il parametro $ sia un numero strettamente positivo
+ case $2 in
+ 	*[!0-9]*) 
+ 		echo Errore: parametro $ non numerico o non positivo
+ 		exit 1;;	
+ 	0)
+ 		echo Errore: parametro $ uguale a 0
+ 		exit 1;;
+ esac
+ 
+ #------------------------------------------------------
+ 
+ #3)CONTROLLIAMO CHE UN PARAMETRO SIA UN NOME ASSOLUTO, CHE SIA UNA DIRECTORY E CHE SIA ATTRAVERSABILE
+ 
+ #controlliamo che sia il nome assoluto di una gerarchia e quindi una directory attraversabile
+ case $1 in
+ 	/*)
+ 		if test ! -d $1 -o ! -w $1	#se nome assoluto, controlliamo sia una dir attraversabile
+ 			then 
+ 				echo Errore: $1 non directory non attraversabile
+ 				exit 2
+ 		fi;;
+ 	*)
+ 		echo Errore: $1 non nome assoluto; exit 3;;
+ esac
+ 
+ #----------------------------------------------------
+ 
+ #4)CONTROLLO SE UN PARAMETRO È COSTITUITO DA SOLO UN CARATTERE
+ 
+ #controllo che il parametro $ sia un singolo carattere
+ case $1 in
+ 	?) ;;
+ 	*)
+ 		echo Errore: $1 non singolo carattere
+ 		exit 1;;
+ esac
+ 
+ #-------------------------------------------------
+ #5)FINITO I CONTROLLI, SETTAGGIO VARIABILE PATH
+ 
+ #se arriviamo qui abbiamo finito i controlli sui parametri
+ #quindi possiamo passare a settare la variabile di ambiente PATH
+ 
+ PATH=`pwd`:$PATH
+ export PATH
+ 
+ #-------------------------------------------------
+ #6)SPOSTAMENTO NELLA DIRECTORY CORRENTE
+ 
+ cd $1 #ci spostiamo nella directory in cui dobbiamo fare la ricerca per questa invocazione
+ 
+ 
+ #------------------------------------------------
+ 
+ #7)PARTE RICORSIVA
+ 
+ #passiamo ora alla parte ricorsiva
+ 
+ for i in *
+ do
+ 	if test -d $i -a -x $i
+ 	then 
+ 		#chiamata ricorsiva cui passiamo come primo parametro il nome assoluto della directory
+ 		FCR.sh `pwd`/$i #(inseriamo tutti i parametri)
+ 	fi
+ done
+ 
+ #-------------------------------------------------
+ 
+ #COSE PARTICOLARI
+ 
+ 
+ #8)NUMERO DI RIGHE CHE INIZIANO CON UNA LETTERA, ESEMPIO 'a'
+ 
+ #nl variabile che conta il numero di righe che iniziano con la lettera a
+ nl=`grep '^a' $i | wc -l`
+ #nel caso sia u ìn carattere numerico `grep [0-9] $i | wc -l`
+ 
+ #------------------------------------------------
+ 
+ #9)FILE CHE ABBIA TERMINAZIONE .S
+ 
+ #controlliamo che il file sia leggibile
+ if test -f $i -a -r $i
+ then 
+ 	case $i in 
+ 	*.$2) ;; #attenzione trovato
+ 	esac
+ fi
+ 
+ #-----------------------------------------------
+ 
+ #10)CONTROLLO IL NUMERO DI LINEE DEL FILE
+ 
+ #controllo il numero di linee del file
+ NL=`wc -l < $i`
+ 
+ #---------------------------------------------
+ 
+#11)CONTROLLO CHE IL NOME DEL FILE ABBIA TOT CARATTERI
+
+#controllo il numero di caratteri del nome del file
+NL= echo $i | wc -c
+NL=`expr $NL - 1`
+
+#oppure, esempio 2 caratteri
+
+#controlliamo la lunghezza del nome del file
+case $F in
+	??) 	#caso giusto
+		;;
+esac
+
+ #-----------------------------------------------
+ 
+ #12)VERIFICHIAMO SE CHE IL FILE CONTENGA IL CARATTERE PASSATO COME PARAMETRO
+ 
+ #verifichiamo che contenga il carattere passato come parametro
+ if grep $carattere $i > /dev/null 2>&1 #ridirigiamo standard output e standard error del grep su /dev/null
+ 	then #c'è il carattere
+ fi
+ 
+ #------------------------------------------------------
+ 
+ #13)SE VUOI USARE SORT
+ #qui crea anche un file sorted
+ sort -f $2 > sorted #usiamo l'opzione -f per fare l'ordinamento senza tenere in conto maiuscole/minuscole 
+ echo `pwd`/sorted >> $3
+ 
+ #------------------------------------------------------
+ 
+ #14)CONTROLLI SULLE STRINGHE
+ 
+ #controlli sulle due stringhe
+ for i in $*
+ do
+ 	case $i in
+ 		*/*) 
+ 			echo Errore: in una stringa che sara\' usata come estensione non ci puo\' essere uno slash
+ 			exit 4;;
+ 		*) ;; #ok
+ 	esac
+ done
+ 
+ #---------------------------------------------------------
+ 
+ #15)INSERIMENTO CONTENUTO ALL'INTERNO DI UNA LISTA
+ 
+ LIST1=   #variabile per raccogliere i file
+ LIST1="$LIST1 $i"
+ 
+ #--------------------------------------------------------
+ 
+ #16)COPIARE UN FILE DENTRO UN'ALTRO FILE MA IN APPEND
+ 
+ #copiamo il primofile dentro il secondo in append
+ cat < $primofile >> $secondofile #il secondo file è quello di destinazione
+ 
+ #---------------------------------------------------------
+ 
+ #17)CONTROLLO CHE DUE FILE ABBIANO LO STESSO CONTENUTO
+ 
+ if diff $file1 $file2 > /dev/null 2>&1
+ 	then echo Non si sono trovate differenze 
+ 	else echo Si sono trovate differenze
+ 
+ #------------------------------------------------------------
+ 
+ #18)SELEZIONARE LA x-ESIMA RIGA
+ 
+ head -$X $file | tail -1 #(echo??)
+ 
+ #partendo dal basso invece
+ 
+ tail -$X $file | head -1
+ 
+ #------------------------------------------------------------
+ 
+ #19)CONTROLLARE CHE IN UN FILE CI SIANO SOLTANTO LETTERE MINUSCOLE
+ 
+ ND=`grep -c [^a-z] $i`
+ if test $ND -eq 0
+ 	then #ok giusto
+ fi
+  # ^ dentro le quadre sta per negazione, fuori sta ad indicare che la stringa deve iniziare con quel carattere
+ #--------------------------------------------------------
+ 
