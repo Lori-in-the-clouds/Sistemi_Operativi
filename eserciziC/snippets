@@ -1,0 +1,371 @@
+// Place your global snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
+	// description. Add comma separated ids of the languages where the snippet is applicable in the scope field. If scope 
+	// is left empty or omitted, the snippet gets applied to all languages. The prefix is what is 
+	// used to trigger the snippet and the body will be expanded and inserted. Possible variables are: 
+	// $1, $2 for tab stops, $0 for the final cursor position, and ${1:label}, ${2:another} for placeholders. 
+	// Placeholders with the same ids are connected.
+	// Example:
+	// "Print to console": {
+	// 	"scope": "javascript,typescript",
+	// 	"prefix": "log",
+	// 	"body": [
+	// 		"console.log('$1');",
+	// 		"$2"
+	// 	],
+	// 	"description": "Log output to console"
+	// }
+	"makefile": {
+		"prefix": "makefile",
+		"body": [
+			"$1: $1.c",
+			"\tgcc -Wall $1.c -o $1"
+		]
+	},
+
+	"librerie": {
+		"prefix": "librerie",
+		"body": [
+			"#include <stdio.h>",
+			"#include <stdlib.h>",
+			"#include <unistd.h>",
+			"#include <sys/wait.h>",
+			"#include <sys/stat.h>",
+			"#include <string.h>",
+			"#include <fcntl.h>",
+			"#include <ctype.h>",
+			"typedef int pipe_t[2];"
+		]
+	},
+
+	"main": {
+		"prefix": "main",
+		"body": [
+			"int main(int argc,char **argv) {",
+			"\t",
+			"}"
+		]
+	},
+
+	"variabili_locali": {
+		"prefix": "variabiliLocali",
+		"body": [
+			"/*--------------*variabili locali*--------------*/",
+			"int N;\t/*numero di processi figli*/",
+			"int i,j,k;",
+			"char ch;",
+			"int fd;\t/*file descriptor per apertura file*/", 
+			"int nr,nw;\t/*per controllare lettura e scrittura pipe*/",
+			"int pid;",
+			"int pidFiglio,status,ritorno;\t/*per fork e wait*/",
+			"/*----------------------------------------------*/"
+		]
+	},
+
+	"controlla numero parametri": {
+		"prefix": "controlloParametri",
+		"body": [
+			"/*controllo sul numero di parametri*/",
+			"if (argc < $1) {",
+			"\tprintf(\"Errore numero di parametri, dato che argc=%d\\n\",argc);",
+			"\texit(1);",
+			"}"
+		]
+	},
+
+	"controllo che sia un singolo carattere": {
+		"prefix": "controllo_carattere",
+		"body": [
+			"/*Controllo che $1 sia un singolo carattere*/",
+			"if (strlen($2) != 1) {",
+			"\tprintf(\"Errore: parametro passato %s non è un singolo carettere\\n\",$2);",
+			"\texit($3);",
+			"}"
+		]
+	},
+
+	"controllo che sia un numero strettamente positivo": {
+		"prefix": "controllo_num_positivi",
+		"body": [
+			"/*Controllo che $1 sia un numero strettamente positivo*/",
+			"if (atoi($2) < 0) {",
+			"\tprintf(\"Errore: parametro passato %s non è un numero strettente positivo\\n\",$2);",
+			"\texit($3);",
+			"}"
+		]
+	},
+
+	"Alloco spazio per una pipe": {
+		"prefix": "alloco_una_pipe",
+		"body": [
+			"/*allocazione dell'array di N pipe descriptors*/",
+			"piped= (pipe_t*)malloc(N*sizeof(pipe_t));",
+			"if (piped == NULL) {",
+			"\tprintf(\"Errore: problemi nell'allocazione di memoria per la pipe\\n\");",
+			"\texit($2);",
+			"}"
+		],
+		"description": "Allocazione spazio solo per una singola pipe:"
+	},
+
+	"Creo un array per una singola pipe": {
+		"prefix": "array_singpipe",
+		"body": [
+			"for(j=0;j<N;j++) {",
+			"\tif(pipe(piped[j]) < 0) {",
+			"\t\tprintf(\"Errore: problemi nella creazione della pipe\\n\");",
+			"\t\texit($1);",
+			"\t}",
+			"}"
+		]
+	},
+
+	"Alloco spazio per pipe Figlio-Padre e Padre-Figlio": {
+		"prefix": "allocoPipePF_e_FP",
+		"body": [
+			"/*allocazione dell'array di N pipe descriptors*/",
+			"piped_FP= (pipe_t*)malloc($1*sizeof(pipe_t));",
+			"piped_PF= (pipe_t*)malloc($1*sizeof(pipe_t));",
+			"if (piped_FP == NULL || piped_PF == NULL) {",
+			"\tprintf(\"Errore: problemi nell'allocazione di memoria per le pipe\\n\");",
+			"\texit($2);",
+			"}"
+		],
+		"description": "Allocazione spazio per le due pipe con direzione figlio-padre e padre-figlio"
+	},
+
+	"Creo un array per pipe Figlio-Padre e Padre-Figlio": {
+		"prefix": "array_pipeFP_PF",
+		"body": [
+			"for(j=0;j<N;j++) {",
+			"\tif(pipe(piped_FP[j]) < 0 || pipe(piped_PF[j]) < 0) {",
+			"\t\tprintf(\"Errore: problemi nella creazione delle pipe\\n\");",
+			"\t\texit($1);",
+			"\t}",
+			"}"
+		]
+	},
+
+	"Padre crea N figli": {
+		"prefix": "creoNfigli",
+		"body": [
+			"printf(\"DEBUG-Sono il processo padre con pid %d e sto per creare %d figli \\n\",getpid(),N);",
+			"for(i=0;i<N;i++) {",
+			"",
+			"\tif((pid = fork()) < 0) {",
+			"\t\tprintf(\"Errore nella fork\\n\");",
+			"\t\texit($1);",
+			"\t}",
+			"\tif(pid == 0) {",
+			"\t\t/*codice figlio*/",
+			"\t\t//chiudiamo pipe che non utilizziamo",
+			"\t}",
+			"}"
+		]
+	},
+
+	"chiudo pipe in figlio spipe": {
+		"prefix": "chiudo_pipe_infiglio_singlepipe",
+		"body": [
+			"/*chiudiamo pipe che non utilizziamo*/",
+			"for (k=0;k<N;k++) {",
+			"\tclose(piped[k][0]);",
+			"\tif(i != k) close(piped[k][1]);",
+			"}"
+		]
+	},
+
+	"chiudo pipe in figlio mulptiple_pipe": {
+		"prefix": "chiudo_pipe_infiglio_pipeFP_PF",
+		"body": [
+			"/*chiudiamo pipe che non utilizziamo*/",
+			"for (k=0;k<N;k++) {",
+			"\tclose(piped_FP[k][0]);",
+			"\tclose(piped_PF[k][1]);",
+			"\tif(i != k) {",
+			"\t\tclose(piped_FP[k][1]);",
+			"\t\tclose(piped_PF[k][0]);",
+			"\t}",
+			"}"
+		]
+	},
+
+	"chiudo pipe in figlio ring" :{
+		"prefix": "chiudo_pipe_infiglio_ring",
+		"body": [
+			"/*chiudiamo pipe che non utilizziamo*/",
+			"/*ATTENZIONE DA CANCELLARE: q oppure i*/",
+			"for(j=0;j<$1;j++) {",
+			"\tif(j != q)",
+			"\t\tclose(piped[j][0]);",
+			"\tif(j != (q+1)%$1)",
+			"\t\tclose(piped[j][1]);",
+			"}"
+		]
+	},
+
+	"chiudo pipe in figlio pipeline": {
+		"prefix": "chiudo_pipe_infiglio_pipeline",
+		"body": [
+			"/*chiusura pipes inutilizzate*/",
+			"for (j=0;j<N;j++) {",
+			"\tif (j!=i)",
+			"\t\tclose(piped[j][1]);",
+			"\tif ((i==0) || (j != i-1))",
+			"\t\tclose(piped[j][0]);",
+			"}"
+		]
+	},
+
+	"chiudo pipe in padre spipe": {
+		"prefix": "chiudo_pipe_inpadre_singlepipe",
+		"body": [
+			"/*chiudiamo le pipe che non utilizziamo*/",
+			"for (j=0;j<N;j++) {",
+			"\tclose(piped[j][1]);",
+			"}"
+			
+		]
+	},
+
+	"chiudo pipe in padre mulptiple_pipe": {
+		"prefix": "chiudo_pipe_inpadre_mulptiple_pipe",
+		"body": [
+			"/*chiudiamo le pipe che non utilizziamo*/",
+			"for (j=0;j<N;j++) {",
+			"\tclose(piped_FP[j][1]);",
+			"\tclose(piped_PF[j][0]);",
+			"}"
+		]
+	},
+
+	"chiudo pipe in padre ring": {
+		"prefix": "chiudo_pipe_inpadre_ring",
+		"body": [
+			"/*chiudiamo le pipe che non utilizziamo, apparte la prima perchè il padre deve dare il primo ok al primo figlio*/",
+			"/*si lascia aperto sia il lato di scrittura che viene usata (e poi in effetti chiuso) che il lato di lettura*/",
+			"for (j=1;j<Q;j++) {",
+			"\tclose(piped[j][1]);",
+			"\tclose(piped[j][0]);",
+			"}"
+
+		]
+	},
+
+	"chiudo pipe in padre pipeline": {
+		"prefix": "chiudo_pipe_inpadre_pipeline",
+		"body": [
+			"/*chiusura pipe: tutte meno l'ultima in lettura*/",
+			"for (i=0;i<N;i++) {",
+			"\tclose(piped[i][1]);",
+			"\tif (i != N - 1) close(piped[i][0])",
+			"}"
+		]
+	},
+
+	"Apro il file": {
+		"prefix": "aproFile",
+		"body": [
+			"/*apro il file*/",
+			"if ((fd = open(argv[$1],${2|O_RDONLY,O_WRONLY;O_RWDR|}))<0) {",
+			"\t printf(\"Errore: impossibile aprire il file %s\\n\",argv[$1]);",
+			"\texit(-1);",
+			"}"
+		]
+	},
+
+	"ReadPipe": {
+		"prefix": "readPipe",
+		"body": [
+			"nr = read(piped[$2][0],&$3,sizeof($3));",
+			"if( nr != sizeof($3)) {",
+			"\tprintf(\"Errore: il $4 ha letto un numero di byte sbagliati\\n\");",
+			"\texit($5);",
+			"}"
+		]
+	},
+
+
+	"WritePipe": {
+		"prefix": "writepipe",
+		"body": [
+			"nw = write(piped[$2][1],&$3,sizeof($3));",
+			"if( nw != sizeof($3)) {",
+			"\tprintf(\"Errore:il  $4 ha scritto un numero di byte sbagliati\\n\");",
+			"\texit($5);",
+			"}"
+		]
+	},
+
+	"Aspetto tutti i figli": {
+		"prefix": "aspettoFigli",
+		"body": [
+			"/*Il padre aspetta tutti i processi figli*/",
+			"for($1=0;$1<$2;$1++) {",
+			"\tif((pidFiglio = wait(&status)) < 0) {",
+			"\t\tprintf(\"Errore wait\\n\");",
+			"\t\texit($3);",
+			"\t}",
+			"\tif((status & 0xFF) != 0) {",
+			"\t\tprintf(\"Figlio con pid %d terminato in modo anomalo\\n\",pidFiglio);",
+			"\t\t exit($3);",
+			"\t} else {",
+			"\t\t ritorno = (int)((status >> 8) & 0xFF);",
+			"\t\t printf(\"Il figlio con pid = %d ha ritornato %d (se 255 problemi!)\\n\",pidFiglio,ritorno);",
+			"\t }",
+			"}",
+			"exit(0);"
+		]
+	},
+
+	"Finitoof()": {
+		"prefix": "finito()",
+		"body": [
+			"/*VARIABILI GLOBALI*/",
+			"int *finito;\t/*array dinamico per indicare i figli che sono terminati*/",
+			"\t\t\t/*la semantica di questo array è che ogni elemento vale 0 se il corrispondente processo NON è finito, altrimenti vale 1*/",
+			"int N;\t\t/*numero di processi figli*/",
+			"",
+			"int finitof() {",
+			"/*questa funzione verifica i valori memorizzati nell'array finito: appena trova un elemento uguale a 0 vuole dire che non tutti i processi figli sono finiti e quindi torna 0;*/",
+			"/*tornerà 1 se e solo se tutti gli elementi dell'array sono a 1 e quindi tutti i processi sono finiti*/",
+			"int i;",
+			"\tfor(i=0; i < N; i++)",
+			"\t\tif (!finito[i])",
+			"\t\t\t/*appena ne trova uno che non ha finito*/",
+			"\t\t\treturn 0;",
+			"\treturn 1;",
+			"}"
+		]
+	},
+
+	"allocoFinito": {
+		"prefix": "alloco_finito",
+		"body": [
+			"/*allocazione memoria dinamica per finito*/",
+			"finito = (int*)malloc(N*sizeof(int));",
+			"if (finito == NULL) {",
+			"\tprintf(\"Errore nella allocazione della memoria per array finito\\n\");",
+			"\texit($2);",
+			"}",
+			"",
+			"/*inizializzazione a 0 di finito: all'inizio nessun figlio è finito;*/",
+			"memset(finito,0,$1*sizeof(int));"
+		]
+	},
+
+	"mia_random": {
+		"prefix": "mia_random",
+		"body": [
+			"#include <time.h>",
+			"srand(time(NULL));",
+			"",
+			"int mia_random(int n)",
+			"{",
+			"\tint casuale;",
+			"\t\tcasuale = rand() % n;",
+			"\t\tcasuale++;",
+			"\t\treturn casuale;",
+			"}"
+		]
+	}
+}
