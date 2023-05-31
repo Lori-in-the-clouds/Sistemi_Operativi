@@ -1,4 +1,5 @@
-// Place your global snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
+{
+	// Place your global snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
 	// description. Add comma separated ids of the languages where the snippet is applicable in the scope field. If scope 
 	// is left empty or omitted, the snippet gets applied to all languages. The prefix is what is 
 	// used to trigger the snippet and the body will be expanded and inserted. Possible variables are: 
@@ -51,13 +52,21 @@
 		"body": [
 			"/*--------------*variabili locali*--------------*/",
 			"int N;\t/*numero di processi figli*/",
-			"int i,j,k;",
+			"int i,j,k;\t/*indici*/",
 			"char ch;",
 			"int fd;\t/*file descriptor per apertura file*/", 
-			"int nr,nw;\t/*per controllare lettura e scrittura pipe*/",
-			"int pid;",
-			"int pidFiglio,status,ritorno;\t/*per fork e wait*/",
+			"int nr,nw;\t/*variabili per salvare/controllare valori di ritorno di read/write da/su pipe*/",
+			"int pid;\t/*pid per fork*/",
+			"int pidFiglio,status,ritorno;\t/*per valore di ritorno figli*/",
 			"/*----------------------------------------------*/"
+		]
+	},
+
+	"variabile ok": {
+		"prefix": "variabile_ok",
+		"body": [
+			"char ok;\t/*carattere letto dai figli dalla pipe precedente e scritta su quella successiva*/",
+			"pipe_t *piped;\t/*array di pipe usate a ring da primo figlio, a secondo figlio .... ultimo figlio e poi a primo figlio: ogni processo legge dalla pipe q e scrive sulla pipe (q+1)%Q*/"
 		]
 	},
 
@@ -246,8 +255,18 @@
 			"for (j=1;j<Q;j++) {",
 			"\tclose(piped[j][1]);",
 			"\tclose(piped[j][0]);",
-			"}"
-
+			"}",
+			"",
+			"/*ora si deve madare l'ok al primo figlio (P0): il valore della variabile ok non ha importanza*/",
+			"nw= write(piped[0][1],&ok,sizeof(char));",
+			"/*anche in questo caso controlliamo il risultato della scrittura*/",
+			"if(nw != sizeof(char)) {",
+			"\tprintf(\"Padre ha scritto un numero di byte sbagliati %d\\n\",nw);",
+			"\texit($1);",
+			"}",
+			"",
+			"/*ora possiamo chiudere anche il lato di scrittura, ma non quello di lettura*/",
+			"close(piped[0][1]);"
 		]
 	},
 
@@ -257,7 +276,7 @@
 			"/*chiusura pipe: tutte meno l'ultima in lettura*/",
 			"for (i=0;i<N;i++) {",
 			"\tclose(piped[i][1]);",
-			"\tif (i != N - 1) close(piped[i][0])",
+			"\tif (i != N - 1) close(piped[i][0]);",
 			"}"
 		]
 	},
@@ -278,7 +297,7 @@
 		"body": [
 			"nr = read(piped[$2][0],&$3,sizeof($3));",
 			"if( nr != sizeof($3)) {",
-			"\tprintf(\"Errore: il $4 ha letto un numero di byte sbagliati\\n\");",
+			"\tprintf(\"Errore: lettura di un numero di byte sbagliati %d\\n\",nr);",
 			"\texit($5);",
 			"}"
 		]
@@ -290,7 +309,7 @@
 		"body": [
 			"nw = write(piped[$2][1],&$3,sizeof($3));",
 			"if( nw != sizeof($3)) {",
-			"\tprintf(\"Errore:il  $4 ha scritto un numero di byte sbagliati\\n\");",
+			"\tprintf(\"Errore: scrittura di un numero di byte sbagliati %d\\n\",nw);",
 			"\texit($5);",
 			"}"
 		]
