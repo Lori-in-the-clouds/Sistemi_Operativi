@@ -84,10 +84,10 @@
 	"controllo che sia un singolo carattere": {
 		"prefix": "controllo_carattere",
 		"body": [
-			"/*Controllo che $1 sia un singolo carattere*/",
-			"if (strlen($2) != 1) {",
-			"\tprintf(\"Errore: parametro passato %s non è un singolo carettere\\n\",$2);",
-			"\texit($3);",
+			"/*Controllo che sia un singolo carattere*/",
+			"if (strlen($1) != 1) {",
+			"\tprintf(\"Errore: parametro passato %s non è un singolo carettere\\n\",$1);",
+			"\texit($2);",
 			"}"
 		]
 	},
@@ -296,7 +296,7 @@
 		"prefix": "creo_file",
 		"body": [
 			"/*creo un nuovo file*/",
-			"if ((fcreat = creat(\"$1\",0644)) < 0) {",
+			"if ((fdcreato = creat(\"$1\",0644)) < 0) {",
 			"\tprintf(\"Errore nella creazione del file\\n\");",
 			"\texit($2);",
 			"}"
