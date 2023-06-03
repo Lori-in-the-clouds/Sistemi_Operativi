@@ -35,7 +35,7 @@ esac
  
  #controllo che il parametro $ sia un numero strettamente positivo
  case $2 in
- 	*[!0-9]*) 
+ 	*[!0-9]*)
  		echo Errore: parametro $ non numerico o non positivo
  		exit 1;;	
  	0)
@@ -65,7 +65,7 @@ esac
  
  #controllo che il parametro $ sia un singolo carattere
  case $1 in
- 	?) ;;
+ 	?) ;; #ok è un singolo carattere
  	*)
  		echo Errore: $1 non singolo carattere
  		exit 1;;
