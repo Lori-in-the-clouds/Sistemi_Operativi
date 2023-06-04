@@ -56,9 +56,16 @@
 			"char ch;",
 			"int fd;\t/*file descriptor per apertura file*/", 
 			"int nr,nw;\t/*variabili per salvare/controllare valori di ritorno di read/write da/su pipe*/",
-			"int pid;\t/*pid per fork*/",
+			"int pid;\t/*process identifier per le fork()*/",
 			"int pidFiglio,status,ritorno;\t/*per valore di ritorno figli*/",
 			"/*----------------------------------------------*/"
+		]
+	},
+
+	"pipe_t piped": {
+		"prefix": "pipe_t *piped",
+		"body": [
+			"pipe_t *piped;\t/*array dinamico di pipe descriptors per comunicazioni figli-padre*/"
 		]
 	},
 
@@ -119,6 +126,7 @@
 	"Creo un array per una singola pipe": {
 		"prefix": "array_singpipe",
 		"body": [
+			"/*Creazione delle N pipe*/",
 			"for(j=0;j<N;j++) {",
 			"\tif(pipe(piped[j]) < 0) {",
 			"\t\tprintf(\"Errore: problemi nella creazione della pipe\\n\");",
@@ -145,6 +153,7 @@
 	"Creo un array per pipe Figlio-Padre e Padre-Figlio": {
 		"prefix": "array_pipeFP_PF",
 		"body": [
+			"/*Creazione delle pipe*/",
 			"for(j=0;j<N;j++) {",
 			"\tif(pipe(piped_FP[j]) < 0 || pipe(piped_PF[j]) < 0) {",
 			"\t\tprintf(\"Errore: problemi nella creazione delle pipe\\n\");",
@@ -158,6 +167,8 @@
 		"prefix": "creoNfigli",
 		"body": [
 			"printf(\"DEBUG-Sono il processo padre con pid %d e sto per creare %d figli \\n\",getpid(),N);",
+			"",
+			"/*Ciclo di generazione dei figli*/",
 			"for(i=0;i<N;i++) {",
 			"",
 			"\tif((pid = fork()) < 0) {",
@@ -296,7 +307,7 @@
 		"prefix": "creo_file",
 		"body": [
 			"/*creo un nuovo file*/",
-			"if ((fdcreato = creat(\"$1\",0644)) < 0) {",
+			"if ((fcreato = creat(\"$1\",0644)) < 0) {",
 			"\tprintf(\"Errore nella creazione del file\\n\");",
 			"\texit($2);",
 			"}"
@@ -346,6 +357,25 @@
 			"\t }",
 			"}",
 			"exit(0);"
+		]
+	},
+
+	"Aspetto Nipote": {
+		"prefix": "aspettoNipote",
+		"body": [
+			"/*Il figlio deve aspettare il nipote*/",
+			"pid = wait(&status);",
+			"if (pid < 0) {",
+			"\tprintf(\"Errore in wait \\n\");",
+			"\texit($1)",
+			"}",
+			"/*la stampa da parte del figlio non è richiesta esplicitamente, ma implicitamnete si capisce che deve essere fatta*/",
+			"if ((status & 0xFF) != 0)",
+			"\tprintf(\"Nipote con pid %d terminato in modo anomalo\\n\",pid);",
+			"else",
+			"\tprintf(\"Il nipote con pid=%d ha ritornato %d (valore 255 significa problemi nel nipote)\\n\",pid,(int)((status >> 8) & 0xFF));",
+			"exit(ritorno);"
+
 		]
 	},
 
