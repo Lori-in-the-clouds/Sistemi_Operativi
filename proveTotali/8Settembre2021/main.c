@@ -228,6 +228,8 @@ int main(int argc,char **argv) {
 
         }
     }
+    
+
 
 
     /*Il padre aspetta tutti i processi figli*/

@@ -1,0 +1,11 @@
+REMINDER
+
+13Luglio2022: ring con padre dentro
+13Luglio2018: quando mandi avanti avanti array di struct (non usare sizeof(A))
+19Giugno2019: esempio di finitof() con segnale padre in risposta al figlio (invia la risposta a solo quelli ancora attivi!)
+8Giugno2022: crea il nipote solo all'occorrenza 
+19Gennaio2022: processi a coppie con stacco i e i-N-1
+22Gennaio2016: padre e figli comunicano a vicenda
+9Settembre2015: si trova in eserciziC/18Maggio --> utilizzo obbligatorio di segnali
+15Luglio2015: utilizzo obbligatorio di segnali
+16Giugno2021: .Chiara
