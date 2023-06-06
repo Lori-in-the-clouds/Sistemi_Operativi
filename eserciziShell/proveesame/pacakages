@@ -19,6 +19,9 @@
 #17)CONTROLLO CHE DUE FILE ABBIANO LO STESSO CONTENUTO
 #18)SELEZIONARE LA X-ESIMA RIGA
 #19)CONTROLLARE CHE IN UN FILE CI SIANO SOLTANTO LETTERE MINUSCOLE
+#20)RICHIESTA OUTPUT DA PARTE DELL'UTENTE
+#21)VALUTARE SE DELLE STRINGHE SONO NULLE
+#22)BASENAME
 
 #1)CONTROLLO SUL NUMERO DI PARAMETRI
 
@@ -220,4 +223,28 @@ esac
  fi
   # ^ dentro le quadre sta per negazione, fuori sta ad indicare che la stringa deve iniziare con quel carattere
  #--------------------------------------------------------
+ 
+ #20)RICHIESTA OUTPUT DA PARTE DELL'UTENTE
+ 
+ #chiediamo all'utente (forziamo l'output sul terminale corrente per non avere problemi se si usasse la ridirezione dello standard output
+ echo "Vuoi visualizzare il file $1 (si/no) ?" > /dev/tty
+ #leggiamo la risposta dell'utente
+ read var1
+ 
+ #----------------------------------------------------------
+ 
+ #21)VALUTARE SE DELLE STRINGHE SONO NULLE
+ if test -z $stringa1 #valuta se la stringa è nulla
+ if test $stringa1 #valuta se la stringa non è nulla
+ 
+ #---------------------------------------------------------
+ 
+ #22)BASENAME
+ base=`basename $1` #variabile che utilizziamo per contenere solo il nome relaivo semplice della dir corrente
+ 
+ case $base in
+ 	$2?$2);; #ok
+ 	*) ;;#non facciamo niente
+ esac
+ 	
  

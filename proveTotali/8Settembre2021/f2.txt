@@ -1,0 +1,3 @@
+SONO LA PRIMA LINEA e sono LUNGO TRE LINEE
+SONO LA LINEA nro 2 di f2.txt
+Ancora una linea in questo file!
